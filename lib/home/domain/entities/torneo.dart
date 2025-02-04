@@ -1,4 +1,4 @@
-import 'package:app_project/home/presentation/providers/torneo_form_provider.dart';
+import 'package:app_project/home/domain/entities/equipo.dart';
 
 class Torneo {
   final String id;

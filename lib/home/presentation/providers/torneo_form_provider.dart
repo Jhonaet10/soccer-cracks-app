@@ -1,11 +1,19 @@
+import 'package:app_project/home/domain/entities/toneoRegister.dart';
+import 'package:app_project/home/domain/repositories/torneo_repository.dart';
+import 'package:app_project/home/infrastructure/repositories/torneo_repository_impl.dart';
 import 'package:app_project/home/presentation/providers/equipo_form_provider.dart';
 import 'package:app_project/shared/infrastructure/inputs/inputs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:formz/formz.dart';
 
+final torneoRepositoryProvider = Provider<TorneoRepository>((ref) {
+  return TorneoRepositoryImpl();
+});
+
 final torneoProvider =
     StateNotifierProvider<TorneoNotifier, TorneoState>((ref) {
-  return TorneoNotifier();
+  final torneoRepository = ref.watch(torneoRepositoryProvider);
+  return TorneoNotifier(torneoRepository: torneoRepository);
 });
 
 class TorneoState {
@@ -76,7 +84,10 @@ class Formato {
 }
 
 class TorneoNotifier extends StateNotifier<TorneoState> {
-  TorneoNotifier() : super(TorneoState());
+  final TorneoRepository torneoRepository;
+  TorneoNotifier({
+    required this.torneoRepository,
+  }) : super(TorneoState()) {}
 
   onNombreTorneoChange(String value) {
     final newNombre = Name.dirty(value);
@@ -122,11 +133,17 @@ class TorneoNotifier extends StateNotifier<TorneoState> {
 
     try {
       // Simula una llamada al backend
-      await Future.delayed(const Duration(seconds: 2));
-      print('Torneo registrado: ${state.nombreTorneo.value}');
-      print('Formato: ${state.formato}');
-      print('Fecha de inicio: ${state.fechaInicio}');
-      print('Equipos: ${state.equipos.map((e) => e.nombre).toList()}');
+      print("Registrando torneo...");
+      RegisterTorneo torneo = RegisterTorneo(
+        nombre: state.nombreTorneo.value,
+        formato: state.formatoJuego.value,
+        fechaInicio: state.fechaInicio!,
+        equipos: state.equipos,
+        organizadorId: '1',
+        codigoAccesoJugador: '1234',
+        codigoAccesoArbitro: '2345',
+      );
+      await torneoRepository.createTorneo(torneo);
 
       // Reinicia el estado después de registrar
       state = TorneoState();

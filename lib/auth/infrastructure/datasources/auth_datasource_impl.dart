@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-class AuthDataSourceImpl extends AuthDataSource {
+class AuthDataSourceImpl implements AuthDataSource {
   final firebase_auth.FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
   final FirebaseFirestore _firestore;

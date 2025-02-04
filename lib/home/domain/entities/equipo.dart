@@ -1,4 +1,4 @@
-import 'package:app_project/home/presentation/providers/equipo_form_provider.dart';
+import 'package:app_project/home/domain/entities/jugador.dart';
 
 class Equipo {
   final String id;
@@ -10,4 +10,14 @@ class Equipo {
     required this.nombre,
     required this.jugadores,
   });
+
+  factory Equipo.fromJson(Map<String, dynamic> json) {
+    return Equipo(
+      id: json['id'] as String,
+      nombre: json['nombre'] as String,
+      jugadores: (json['jugadores'] as List<dynamic>)
+          .map((jugador) => Jugador.fromJson(jugador))
+          .toList(),
+    );
+  }
 }
