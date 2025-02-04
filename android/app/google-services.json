@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "194480900121",
+    "project_id": "soccer-crack-nuevo",
+    "storage_bucket": "soccer-crack-nuevo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:194480900121:android:3250d249501d4a8d758288",
+        "android_client_info": {
+          "package_name": "com.example.app_project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "194480900121-bdp773o16ih65jdajbkg8581646gp0hv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzd4B5RlPTQHm50ttLGdLC76v7-WzMos4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "194480900121-bdp773o16ih65jdajbkg8581646gp0hv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
