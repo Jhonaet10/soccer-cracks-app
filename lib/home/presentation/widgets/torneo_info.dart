@@ -15,7 +15,7 @@ class TorneoInfoWidget extends ConsumerWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Image.asset('assets/logo.png', width: 250),
+        Image.asset('assets/logo.jpg', width: 200),
         const SizedBox(height: 20),
         Text(
           "Torneo: ${torneo.nombre}",

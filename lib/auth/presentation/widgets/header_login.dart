@@ -24,7 +24,7 @@ class HeaderLogin extends StatelessWidget {
               children: [
                 SizedBox(height: logoHeight.toDouble()),
                 Image.asset(
-                  'assets/logo.png',
+                  'assets/logo.jpg',
                   width: 180,
                 ),
                 const Text(

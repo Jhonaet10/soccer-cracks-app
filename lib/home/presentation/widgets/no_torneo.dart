@@ -9,7 +9,7 @@ class NoTorneoWidget extends StatelessWidget {
     return Column(
       children: [
         const SizedBox(height: 20),
-        Image.asset('assets/logo.png', width: 250),
+        Image.asset('assets/logo.jpg', width: 200),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 30),
           child: Text(

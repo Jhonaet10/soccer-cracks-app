@@ -22,8 +22,8 @@ class CreateChampionshipScreen extends ConsumerWidget {
           children: [
             Center(
               child: Image.asset(
-                'assets/logo.png',
-                width: 200,
+                'assets/logo.jpg',
+                width: 180,
               ),
             ),
             const Center(
@@ -66,7 +66,8 @@ class CreateChampionshipScreen extends ConsumerWidget {
                   const SizedBox(height: 10),
                   TextField(
                     controller: TextEditingController(
-                        text: '${torneoForm.formatoJuego.value} - ${torneoForm.duracionJuego.value}'),
+                        text:
+                            '${torneoForm.formatoJuego.value} - ${torneoForm.duracionJuego.value}'),
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.sports_soccer),
                       labelText: 'Seleccionar Formato de Juego',
