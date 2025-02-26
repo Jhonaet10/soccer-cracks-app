@@ -24,8 +24,9 @@ class HeaderLogin extends StatelessWidget {
               children: [
                 SizedBox(height: logoHeight.toDouble()),
                 Image.asset(
+                  
                   'assets/logo.jpg',
-                  width: 180,
+                  width: 140,
                 ),
                 const Text(
                   'Bienvenido de Nuevo',
