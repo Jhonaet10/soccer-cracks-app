@@ -2,6 +2,7 @@ import 'package:app_project/home/domain/datasource/torneo_datasource.dart';
 import 'package:app_project/home/domain/entities/equipo.dart';
 import 'package:app_project/home/domain/entities/jugador.dart';
 import 'package:app_project/home/domain/entities/partido.dart';
+import 'package:app_project/home/domain/entities/partido_detalle.dart';
 import 'package:app_project/home/domain/entities/tabla_posicion.dart';
 import 'package:app_project/home/domain/entities/toneoRegister.dart';
 import 'package:app_project/home/domain/entities/torneo.dart';
@@ -302,6 +303,47 @@ class TorneoDatasourceImpl implements TorneoDatasource {
       print("Tabla de posiciones actualizada.");
     } catch (e) {
       throw Exception("Error al actualizar la tabla de posiciones: $e");
+    }
+  }
+
+  @override
+  Future<List<PartidoDetalle>> getPartidos(String torneoId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('partidos')
+          .where('torneoId', isEqualTo: torneoId)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) return [];
+
+      // 🔹 Obtener los datos de los partidos
+      List<Partido> partidos = querySnapshot.docs
+          .map((doc) => Partido.fromJson(doc.data()))
+          .toList();
+
+      // 🔹 Obtener los nombres de los equipos desde la colección de equipos
+      final equiposSnapshot = await _firestore.collection('equipos').get();
+      Map<String, String> equiposMap = {
+        for (var doc in equiposSnapshot.docs) doc.id: doc.data()['nombre']
+      };
+
+      // 🔹 Convertir `Partido` en `PartidoDetalle` con los nombres de los equipos
+      List<PartidoDetalle> partidosDetallados = partidos.map((partido) {
+        return PartidoDetalle(
+          id: partido.id,
+          torneoId: partido.torneoId,
+          equipo1: partido.equipo1,
+          equipo2: partido.equipo2,
+          fecha: partido.fecha,
+          resultado: partido.resultado,
+          equipo1Nombre: equiposMap[partido.equipo1] ?? "Desconocido",
+          equipo2Nombre: equiposMap[partido.equipo2] ?? "Desconocido",
+        );
+      }).toList();
+
+      return partidosDetallados;
+    } catch (e) {
+      throw Exception("Error al obtener los partidos: $e");
     }
   }
 }

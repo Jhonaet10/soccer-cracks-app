@@ -1,4 +1,5 @@
 import 'package:app_project/home/domain/datasource/torneo_datasource.dart';
+import 'package:app_project/home/domain/entities/partido_detalle.dart';
 import 'package:app_project/home/domain/entities/tabla_posicion.dart';
 import 'package:app_project/home/domain/entities/toneoRegister.dart';
 import 'package:app_project/home/domain/entities/torneo.dart';
@@ -56,5 +57,10 @@ class TorneoRepositoryImpl implements TorneoRepository {
       String equipoPerdedor, int golesGanador, int golesPerdedor) {
     return datasource.actualizarTablaPosiciones(
         torneoId, equipoGanador, equipoPerdedor, golesGanador, golesPerdedor);
+  }
+
+  @override
+  Future<List<PartidoDetalle>> getPartidos(String torneoId) {
+    return datasource.getPartidos(torneoId);
   }
 }
