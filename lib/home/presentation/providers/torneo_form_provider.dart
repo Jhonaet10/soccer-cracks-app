@@ -1,3 +1,4 @@
+import 'package:app_project/auth/presentation/providers/auth_provider.dart';
 import 'package:app_project/home/domain/entities/toneoRegister.dart';
 import 'package:app_project/home/domain/repositories/torneo_repository.dart';
 import 'package:app_project/home/infrastructure/repositories/torneo_repository_impl.dart';
@@ -13,7 +14,9 @@ final torneoRepositoryProvider = Provider<TorneoRepository>((ref) {
 final torneoProvider =
     StateNotifierProvider<TorneoNotifier, TorneoState>((ref) {
   final torneoRepository = ref.watch(torneoRepositoryProvider);
-  return TorneoNotifier(torneoRepository: torneoRepository);
+  final authState = ref.watch(authProvider);
+  return TorneoNotifier(
+      torneoRepository: torneoRepository, authState: authState);
 });
 
 class TorneoState {
@@ -85,7 +88,9 @@ class Formato {
 
 class TorneoNotifier extends StateNotifier<TorneoState> {
   final TorneoRepository torneoRepository;
+  final AuthState authState;
   TorneoNotifier({
+    required this.authState,
     required this.torneoRepository,
   }) : super(TorneoState()) {}
 
@@ -134,12 +139,13 @@ class TorneoNotifier extends StateNotifier<TorneoState> {
     try {
       // Simula una llamada al backend
       print("Registrando torneo...");
+      final currentUserId = authState.user?.id;
       RegisterTorneo torneo = RegisterTorneo(
         nombre: state.nombreTorneo.value,
         formato: state.formatoJuego.value,
         fechaInicio: state.fechaInicio!,
         equipos: state.equipos,
-        organizadorId: '1',
+        organizadorId: currentUserId ?? '', // Asigna el id del usuario actual
         codigoAccesoJugador: '1234',
         codigoAccesoArbitro: '2345',
       );

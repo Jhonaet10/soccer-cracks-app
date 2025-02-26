@@ -37,4 +37,24 @@ class RegisterTorneo {
       'codigoAccesoArbitro': codigoAccesoArbitro,
     };
   }
+
+  RegisterTorneo copyWith({
+    String? nombre,
+    String? formato,
+    DateTime? fechaInicio,
+    List<Equipo>? equipos,
+    String? organizadorId,
+    String? codigoAccesoJugador,
+    String? codigoAccesoArbitro,
+  }) {
+    return RegisterTorneo(
+      nombre: nombre ?? this.nombre,
+      formato: formato ?? this.formato,
+      fechaInicio: fechaInicio ?? this.fechaInicio,
+      equipos: equipos ?? this.equipos,
+      organizadorId: organizadorId ?? this.organizadorId,
+      codigoAccesoJugador: codigoAccesoJugador ?? this.codigoAccesoJugador,
+      codigoAccesoArbitro: codigoAccesoArbitro ?? this.codigoAccesoArbitro,
+    );
+  }
 }

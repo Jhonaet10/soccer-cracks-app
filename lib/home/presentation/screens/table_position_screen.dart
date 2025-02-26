@@ -1,163 +1,160 @@
+import 'package:app_project/home/presentation/providers/tabla_posicion_provider.dart';
+import 'package:app_project/home/presentation/providers/torneo_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class TablePositionsScreen extends StatelessWidget {
-  const TablePositionsScreen({
-    super.key,
-  });
+class TablePositionsScreen extends ConsumerWidget {
+  const TablePositionsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> equipos = [
-      {
-        'pos': 1,
-        'club': 'Atlético Madrid',
-        'pj': 18,
-        'g': 12,
-        'e': 5,
-        'p': 1,
-        'dg': 21,
-        'pts': 41,
-      },
-      {
-        'pos': 2,
-        'club': 'Real Madrid',
-        'pj': 18,
-        'g': 12,
-        'e': 4,
-        'p': 2,
-        'dg': 23,
-        'pts': 40,
-      },
-      {
-        'pos': 3,
-        'club': 'Barcelona',
-        'pj': 18,
-        'g': 11,
-        'e': 4,
-        'p': 3,
-        'dg': 20,
-        'pts': 37,
-      },
-      {
-        'pos': 4,
-        'club': 'Sevilla',
-        'pj': 18,
-        'g': 11,
-        'e': 3,
-        'p': 4,
-        'gf': 26,
-        'gc': 16,
-        'dg': 10,
-        'pts': 36,
-      },
-      {
-        'pos': 5,
-        'club': 'Real Sociedad',
-        'pj': 18,
-        'g': 8,
-        'e': 8,
-        'p': 2,
-        'dg': 16,
-        'pts': 32,
-      },
-      {
-        'pos': 6,
-        'club': 'Villarreal',
-        'pj': 18,
-        'g': 6,
-        'e': 13,
-        'p': 2,
-        'dg': 9,
-        'pts': 31,
-      },
-      {
-        'pos': 7,
-        'club': 'Real Betis',
-        'pj': 18,
-        'g': 9,
-        'e': 3,
-        'p': 6,
-        'dg': 0,
-        'pts': 30,
-      },
-      {
-        'pos': 8,
-        'club': 'Cádiz',
-        'pj': 18,
-        'g': 7,
-        'e': 5,
-        'p': 6,
-        'dg': -5,
-        'pts': 26,
-      }
-      // Agrega más equipos aquí...
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final torneoState = ref.watch(torneoProvider);
+    final torneo = torneoState.selectedTorneo;
 
-    return SingleChildScrollView(
+    if (torneo == null) {
+      return const Center(child: Text("No hay torneo activo."));
+    }
+
+    if (torneo.estado != "En curso") {
+      return const Center(child: Text("El torneo aún no ha comenzado."));
+    }
+
+    // 🔹 Escuchar cambios en el torneo y cargar la tabla cuando el estado sea "En curso"
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tablaCargada = ref.read(tablaCargadaProvider);
+      if (!tablaCargada && torneo?.estado == "En curso") {
+        print("Carga inicial de la tabla de posiciones...");
+        ref.read(tablaPosicionesProvider.notifier).cargarTabla(torneo!.id);
+        ref.read(tablaCargadaProvider.notifier).state =
+            true; // Evita múltiples cargas
+      }
+    });
+
+    final tablaPosiciones = ref.watch(tablaPosicionesProvider);
+
+    if (tablaPosiciones.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0), // 🔹 Espaciado en los bordes
       child: Column(
         children: [
-          const SizedBox(height: 20),
           const Text(
-            textAlign: TextAlign.start,
             'Tabla de Posiciones',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
+              color: Colors.black87,
             ),
           ),
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: DataTable(
-              dataRowColor: WidgetStateProperty.resolveWith((states) =>
-                  states.contains(WidgetState.selected)
-                      ? Colors.blue.withOpacity(0.1)
-                      : Colors.transparent),
-              headingRowColor:
-                  WidgetStateProperty.all(const Color.fromRGBO(0, 0, 100, 1)),
-              headingTextStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          const SizedBox(height: 16),
+
+          // 🔹 Scroll horizontal si la tabla es muy ancha
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100], // 🔹 Color de fondo suave
+                borderRadius:
+                    BorderRadius.circular(15), // 🔹 Bordes redondeados
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-              columnSpacing: 14,
-              dividerThickness: 1,
-              columns: const [
-                DataColumn(label: Text('#')),
-                DataColumn(label: Text('Club')),
-                DataColumn(label: Text('PJ')),
-                DataColumn(label: Text('G')),
-                DataColumn(label: Text('E')),
-                DataColumn(label: Text('P')),
-                DataColumn(label: Text('DG')),
-                DataColumn(label: Text('Pts')),
-              ],
-              rows: equipos.map((equipo) {
-                return DataRow(
-                  color: WidgetStateProperty.resolveWith((states) =>
-                      equipos.indexOf(equipo) % 2 == 0
-                          ? Colors.grey[100]
-                          : Colors.white),
-                  cells: [
-                    DataCell(Text(equipo['pos'].toString())),
-                    DataCell(Text(
-                      equipo['club'],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    )),
-                    DataCell(Text(equipo['pj'].toString())),
-                    DataCell(Text(equipo['g'].toString())),
-                    DataCell(Text(equipo['e'].toString())),
-                    DataCell(Text(equipo['p'].toString())),
-                    DataCell(Text(equipo['dg'].toString())),
-                    DataCell(Text(
-                      equipo['pts'].toString(),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    )),
-                  ],
-                );
-              }).toList(),
+              child: DataTable(
+                border:
+                    TableBorder.all(color: Colors.black26), // 🔹 Bordes suaves
+                columns: const [
+                  DataColumn(
+                      label: Text(
+                    '#',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                  )),
+                  DataColumn(
+                      label: Text(
+                    'Equipo',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                  )),
+                  DataColumn(
+                      label: Text(
+                    'PJ',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                  )),
+                  DataColumn(
+                      label: Text(
+                    'G',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                  )),
+                  DataColumn(
+                      label: Text(
+                    'E',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                  )),
+                  DataColumn(
+                      label: Text(
+                    'P',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                  )),
+                  DataColumn(
+                      label: Text(
+                    'DG',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                  )),
+                  DataColumn(
+                      label: Text(
+                    'Pts',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                  )),
+                ],
+                headingRowColor: WidgetStateProperty.all(
+                    Color.fromRGBO(0, 0, 100, 1)), // 🔹 Fondo del encabezado
+                dataRowColor: WidgetStateProperty.resolveWith<Color?>(
+                    (Set<WidgetState> states) {
+                  return states.contains(WidgetState.selected)
+                      ? Colors.blue.withOpacity(0.1)
+                      : null; // 🔹 Alternar color de filas
+                }),
+                rows: tablaPosiciones.map((equipo) {
+                  return DataRow(
+                    color: WidgetStateProperty.resolveWith<Color?>(
+                        (Set<WidgetState> states) {
+                      return (tablaPosiciones.indexOf(equipo) % 2 == 0)
+                          ? Colors.grey[200]
+                          : Colors.white; // 🔹 Alternar color en las filas
+                    }),
+                    cells: [
+                      DataCell(Text(
+                          (tablaPosiciones.indexOf(equipo) + 1).toString())),
+                      DataCell(Text(
+                        equipo.nombreEquipo!,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      )),
+                      DataCell(Text(equipo.pj.toString())),
+                      DataCell(Text(equipo.g.toString())),
+                      DataCell(Text(equipo.e.toString())),
+                      DataCell(Text(equipo.p.toString())),
+                      DataCell(Text(equipo.dg.toString())),
+                      DataCell(Text(
+                        equipo.pts.toString(),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      )),
+                    ],
+                  );
+                }).toList(),
+              ),
             ),
           ),
         ],

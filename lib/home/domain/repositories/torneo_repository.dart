@@ -1,3 +1,4 @@
+import 'package:app_project/home/domain/entities/tabla_posicion.dart';
 import 'package:app_project/home/domain/entities/toneoRegister.dart';
 import 'package:app_project/home/domain/entities/torneo.dart';
 
@@ -7,4 +8,9 @@ abstract class TorneoRepository {
   Future<Torneo> updateTorneo(RegisterTorneo registerTorneo, String id);
   Future<Torneo> deleteTorneo(String id);
   Future<List<Torneo>> getTorneos();
+  Future<Torneo?> getTorneoByOrganizadorId(String organizadorId);
+  Future<void> iniciarCampeonato(String torneoId, List<String> equipoIds);
+  Future<List<TablaPosicion>> getTablaPosiciones(String torneoId);
+  Future<void> actualizarTablaPosiciones(String torneoId, String equipoGanador,
+      String equipoPerdedor, int golesGanador, int golesPerdedor);
 }

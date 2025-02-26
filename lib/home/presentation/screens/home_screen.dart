@@ -1,9 +1,10 @@
 import 'package:app_project/auth/presentation/providers/auth_provider.dart';
+import 'package:app_project/home/presentation/providers/torneo_provider.dart';
+import 'package:app_project/home/presentation/screens/home_tab_view_screen.dart';
 import 'package:app_project/home/presentation/screens/matches_screen.dart';
 import 'package:app_project/home/presentation/screens/table_position_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 class HomeScreen extends ConsumerWidget {
   static const name = 'home-screen';
@@ -11,6 +12,13 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final torneoNotifier = ref.read(torneoProvider.notifier);
+
+    // Cargar el torneo del usuario al abrir la pantalla
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      torneoNotifier.getTorneoByUser();
+    });
+
     return DefaultTabController(
       length: 4,
       child: Scaffold(
@@ -23,86 +31,59 @@ class HomeScreen extends ConsumerWidget {
               icon: const Icon(Icons.exit_to_app, color: Colors.white),
             ),
           ],
-          title: const Text('Soccer Cracks',
-              style: TextStyle(color: Colors.white, fontSize: 25)),
-          bottom: const TabBar(
-            labelColor: Colors.white, // Color para las pestañas seleccionadas
-            unselectedLabelColor:
-                Colors.white, // Color para las pestañas no seleccionadas
-            tabs: [
-              Tab(
-                text: 'Inicio',
-                icon: Icon(
-                  Icons.home,
-                  color: Colors.white,
-                ),
-                iconMargin: EdgeInsets.zero,
-              ),
-              Tab(
-                text: 'Partidos',
-                icon: Icon(Icons.sports_soccer, color: Colors.white),
-                iconMargin: EdgeInsets.zero,
-              ),
-              Tab(
-                text: 'Tabla de Posiciones',
-                icon: Icon(Icons.table_chart, color: Colors.white),
-                iconMargin: EdgeInsets.zero,
-              ),
-              Tab(
-                text: 'Estadísticas',
-                icon: Icon(Icons.bar_chart, color: Colors.white),
-                iconMargin: EdgeInsets.zero,
-              ),
-            ],
+          title: const Text(
+            'Soccer Cracks',
+            style: TextStyle(color: Colors.white, fontSize: 25),
           ),
+          bottom: const _Tabs(),
         ),
-        body: TabBarView(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Center(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Image.asset(
-                      'assets/logo.png',
-                      width: 250,
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 30),
-                      child: Text(
-                        textAlign: TextAlign.center,
-                        'Aun no tienes registrado un Torneo',
-                        style: TextStyle(
-                          color: Color.fromRGBO(0, 0, 0, 1),
-                          fontSize: 30,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.push('/create-championship');
-                      },
-                      child: const Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        child: Text('Crear Torneo',
-                            style: TextStyle(fontSize: 20)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const Center(child: MatchesScreen()),
-            const TablePositionsScreen(),
-            const Center(
-              child: Text('Estadísticas'),
-            ),
-          ],
-        ),
+        body: const _TabViews(),
       ),
+    );
+  }
+}
+
+/// **Widget que maneja los Tabs**
+class _Tabs extends StatelessWidget implements PreferredSizeWidget {
+  const _Tabs();
+
+  @override
+  Widget build(BuildContext context) {
+    return const TabBar(
+      labelColor: Colors.white,
+      unselectedLabelColor: Colors.white,
+      tabs: [
+        Tab(text: 'Inicio', icon: Icon(Icons.home, color: Colors.white)),
+        Tab(
+            text: 'Partidos',
+            icon: Icon(Icons.sports_soccer, color: Colors.white)),
+        Tab(
+            text: 'Tabla de Posiciones',
+            icon: Icon(Icons.table_chart, color: Colors.white)),
+        Tab(
+            text: 'Estadísticas',
+            icon: Icon(Icons.bar_chart, color: Colors.white)),
+      ],
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+/// **Widget que maneja el contenido de cada tab**
+class _TabViews extends StatelessWidget {
+  const _TabViews();
+
+  @override
+  Widget build(BuildContext context) {
+    return const TabBarView(
+      children: [
+        HomeTabView(), // Refactorizado en un nuevo widget
+        Center(child: MatchesScreen()),
+        TablePositionsScreen(),
+        Center(child: Text('Estadísticas')),
+      ],
     );
   }
 }
