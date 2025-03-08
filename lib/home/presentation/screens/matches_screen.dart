@@ -1,43 +1,41 @@
 import 'package:app_project/home/presentation/providers/partido_provider.dart';
+import 'package:app_project/home/presentation/widgets/common/tab_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:app_project/home/presentation/widgets/matches/empty_matches.dart';
+import 'package:app_project/home/presentation/widgets/matches/matches_list.dart';
 
 class MatchesScreen extends ConsumerWidget {
-  const MatchesScreen({super.key});
+  static const mainColor = Color.fromRGBO(0, 0, 100, 1);
+  final bool canEditResults;
+
+  const MatchesScreen({
+    super.key,
+    this.canEditResults = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final partidos = ref.watch(partidosProvider);
 
-    if (partidos.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return ListView.builder(
-      itemCount: partidos.length,
-      itemBuilder: (context, index) {
-        final partido = partidos[index];
-
-        return Card(
-          elevation: 3,
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          child: ListTile(
-            leading: const Icon(Icons.sports_soccer, size: 30),
-            title: Text(
-              '${partido.equipo1Nombre} vs ${partido.equipo2Nombre}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+    return Column(
+      children: [
+        const TabHeader(
+          title: 'Calendario de Partidos',
+          description:
+              'Aquí puedes ver todos los partidos programados del torneo',
+        ),
+        // Lista de partidos
+        if (partidos.isEmpty)
+          const EmptyMatches()
+        else
+          Expanded(
+            child: MatchesList(
+              partidos: partidos,
+              canEditResults: canEditResults,
             ),
-            subtitle: Text('Fecha: ${partido.fecha.toLocal()}'),
-            trailing: partido.resultado != null
-                ? Text(
-                    partido.resultado!,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.green),
-                  )
-                : const Icon(Icons.schedule, color: Colors.grey),
           ),
-        );
-      },
+      ],
     );
   }
 }

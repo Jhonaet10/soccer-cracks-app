@@ -5,7 +5,7 @@ import 'package:app_project/home/domain/entities/torneo.dart';
 
 abstract class TorneoDatasource {
   Future<void> createTorneo(RegisterTorneo registerTorneo);
-  Future<Torneo> getTorneo(String id);
+  Future<Torneo?> getTorneo(String id);
   Future<Torneo> updateTorneo(RegisterTorneo registerTorneo, String id);
   Future<Torneo> deleteTorneo(String id);
   Future<List<Torneo>> getTorneos();
@@ -15,4 +15,11 @@ abstract class TorneoDatasource {
   Future<void> actualizarTablaPosiciones(String torneoId, String equipoGanador,
       String equipoPerdedor, int golesGanador, int golesPerdedor);
   Future<List<PartidoDetalle>> getPartidos(String torneoId);
+  Future<Torneo?> getTorneoByCode(String code, String role);
+  Future<void> assignTournamentToUser(String userId, String torneoId);
+  Future<void> registrarResultadoPartido({
+    required String partidoId,
+    required String resultado,
+    required Map<String, dynamic> incidencias,
+  });
 }

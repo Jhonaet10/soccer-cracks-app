@@ -5,6 +5,7 @@ class Partido {
   final String equipo2;
   final DateTime fecha;
   final String? resultado; // Puede ser null si aún no se ha jugado
+  final String estado; // Pendiente o Finalizado
 
   Partido({
     required this.id,
@@ -13,6 +14,7 @@ class Partido {
     required this.equipo2,
     required this.fecha,
     this.resultado,
+    this.estado = 'Pendiente',
   });
 
   Map<String, dynamic> toJson() {
@@ -23,6 +25,7 @@ class Partido {
       'equipo2': equipo2,
       'fecha': fecha.toIso8601String(),
       'resultado': resultado,
+      'estado': estado,
     };
   }
 
@@ -34,6 +37,7 @@ class Partido {
       equipo2: json['equipo2'],
       fecha: DateTime.parse(json['fecha']),
       resultado: json['resultado'],
+      estado: json['estado'] ?? 'Pendiente',
     );
   }
 }

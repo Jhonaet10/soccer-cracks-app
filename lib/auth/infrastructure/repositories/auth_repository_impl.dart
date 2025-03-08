@@ -18,8 +18,9 @@ class AuthRepositoryImpl extends AuthRepository {
   }
 
   @override
-  Future<User> register(String email, String password, String fullName) {
-    return dataSource.register(email, password, fullName);
+  Future<User> register(
+      String email, String password, String fullName, String role) {
+    return dataSource.register(email, password, fullName, role);
   }
 
   @override
@@ -30,5 +31,15 @@ class AuthRepositoryImpl extends AuthRepository {
   @override
   Future<User> loginWithGoogle() {
     return dataSource.loginWithGoogle();
+  }
+
+  @override
+  Future<User> completeRegistration(String userId, String role) {
+    return dataSource.completeRegistration(userId, role);
+  }
+
+  @override
+  Future<void> logout() {
+    return dataSource.logout();
   }
 }

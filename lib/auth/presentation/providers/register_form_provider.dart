@@ -16,7 +16,7 @@ final registerFormProvider =
 
 //! 2 - Como implementamos un notifier
 class RegisterFormNotifier extends StateNotifier<RegisterFormState> {
-  final Function(String, String, String) registerUserCallback;
+  final Function(String, String, String, String) registerUserCallback;
 
   RegisterFormNotifier({required this.registerUserCallback})
       : super(RegisterFormState());
@@ -53,9 +53,9 @@ class RegisterFormNotifier extends StateNotifier<RegisterFormState> {
   }
 
   onRoleChanged(String value) {
-    final newRole = Role.dirty(value == 'admin'
-        ? RoleType.admin
-        : value == 'jugador'
+    final newRole = Role.dirty(value == 'Organizador'
+        ? RoleType.organizador
+        : value == 'Jugador'
             ? RoleType.jugador
             : RoleType.arbitro);
     state = state.copyWith(
@@ -71,11 +71,16 @@ class RegisterFormNotifier extends StateNotifier<RegisterFormState> {
     if (!state.isValid) return;
 
     state = state.copyWith(isPosting: true);
-
+    final roleName = state.role.value.name == 'organizador'
+        ? 'Organizador'
+        : state.role.value.name == 'arbitro'
+            ? 'Árbitro'
+            : 'Jugador';
     await registerUserCallback(
       state.email.value,
       state.password.value,
       state.name.value,
+      roleName,
     );
     state = state.copyWith(isPosting: false);
   }

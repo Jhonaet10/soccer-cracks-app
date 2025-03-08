@@ -3,7 +3,7 @@ import 'package:formz/formz.dart';
 // Define input validation errors
 enum RoleError { empty, invalid }
 
-enum RoleType { admin, arbitro, jugador }
+enum RoleType { organizador, arbitro, jugador }
 
 class Role extends FormzInput<RoleType, RoleError> {
   // Call super.pure to represent an unmodified form input.

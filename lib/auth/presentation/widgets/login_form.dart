@@ -1,4 +1,6 @@
 import 'package:app_project/auth/presentation/providers/login_form_provider.dart';
+import 'package:app_project/auth/presentation/providers/auth_provider.dart';
+import 'package:app_project/shared/presentation/widgets/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +13,18 @@ class LoginForm extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final loginForm = ref.watch(loginFormProvider);
+
+    // Listener para errores de autenticación
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.errorMessage.isNotEmpty) {
+        showCustomSnackbar(
+          context,
+          message: next.errorMessage,
+          isError: true,
+        );
+      }
+    });
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 0),
       child: Column(
@@ -103,19 +117,40 @@ class LoginForm extends ConsumerWidget {
           Column(
             children: [
               const Text('O inicia sesión con'),
+              const SizedBox(height: 15),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     onPressed: () {
                       ref.read(loginFormProvider.notifier).onSignInWithGoogle();
                     },
-                    child: const Text('Google'),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: () {},
-                    child: const Text('Facebook'),
+                    icon: Image.asset(
+                      'assets/google_icon.png',
+                      height: 24,
+                    ),
+                    label: const Text(
+                      'Continuar con Google',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black87,
+                      elevation: 1,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                          color: Colors.grey.shade300,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

@@ -11,9 +11,9 @@ class RegisterForm extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final registerForm = ref.watch(registerFormProvider);
     final Roles = [
-      {'value': 'jugador', 'label': 'Jugador'},
-      {'value': 'admin', 'label': 'Administrador'},
-      {'value': 'arbitro', 'label': 'Árbitro'},
+      {'value': 'Jugador', 'label': 'Jugador'},
+      {'value': 'Organizador', 'label': 'Organizador'},
+      {'value': 'Árbitro', 'label': 'Árbitro'},
     ];
 
     return Padding(
@@ -79,10 +79,10 @@ class RegisterForm extends ConsumerWidget {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: registerForm.role.value == RoleType.jugador
-                    ? 'jugador'
-                    : registerForm.role.value == RoleType.admin
-                        ? 'admin'
-                        : 'arbitro',
+                    ? 'Jugador'
+                    : registerForm.role.value == RoleType.organizador
+                        ? 'Organizador'
+                        : 'Árbitro',
                 onChanged: (String? value) {
                   ref.read(registerFormProvider.notifier).onRoleChanged(value!);
                 },

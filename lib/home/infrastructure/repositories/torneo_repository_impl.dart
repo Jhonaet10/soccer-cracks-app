@@ -23,7 +23,7 @@ class TorneoRepositoryImpl implements TorneoRepository {
   }
 
   @override
-  Future<Torneo> getTorneo(String id) {
+  Future<Torneo?> getTorneo(String id) {
     return datasource.getTorneo(id);
   }
 
@@ -62,5 +62,32 @@ class TorneoRepositoryImpl implements TorneoRepository {
   @override
   Future<List<PartidoDetalle>> getPartidos(String torneoId) {
     return datasource.getPartidos(torneoId);
+  }
+
+  @override
+  Future<void> assignTournamentToUser(String userId, String tournamentId) {
+    return datasource.assignTournamentToUser(userId, tournamentId);
+  }
+
+  @override
+  Future<Torneo?> getTorneoByCode(String code, String role) {
+    return datasource.getTorneoByCode(code, role);
+  }
+
+  @override
+  Future<void> registrarResultadoPartido({
+    required String partidoId,
+    required String resultado,
+    required Map<String, dynamic> incidencias,
+  }) async {
+    try {
+      await datasource.registrarResultadoPartido(
+        partidoId: partidoId,
+        resultado: resultado,
+        incidencias: incidencias,
+      );
+    } catch (e) {
+      throw Exception('Error al registrar el resultado del partido: $e');
+    }
   }
 }

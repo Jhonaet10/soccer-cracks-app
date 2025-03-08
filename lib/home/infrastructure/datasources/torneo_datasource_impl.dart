@@ -6,7 +6,13 @@ import 'package:app_project/home/domain/entities/partido_detalle.dart';
 import 'package:app_project/home/domain/entities/tabla_posicion.dart';
 import 'package:app_project/home/domain/entities/toneoRegister.dart';
 import 'package:app_project/home/domain/entities/torneo.dart';
+import 'package:app_project/shared/infrastructure/errors/handle_error.dart';
+import 'package:app_project/shared/infrastructure/errors/custom_error.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
+import 'package:app_project/home/infrastructure/mappers/equipo_mapper.dart';
+import 'package:app_project/home/infrastructure/mappers/jugador_mapper.dart';
+import 'package:app_project/home/infrastructure/mappers/torneo_mapper.dart';
 
 class TorneoDatasourceImpl implements TorneoDatasource {
   final FirebaseFirestore _firestore;
@@ -20,16 +26,34 @@ class TorneoDatasourceImpl implements TorneoDatasource {
     try {
       final torneoDoc = _firestore.collection('torneos').doc();
       final equiposCollection = _firestore.collection('equipos');
+      final jugadoresCollection = _firestore.collection('jugadores');
 
       // Crear cada equipo y almacenar los IDs
       List<String> equipoIds = [];
 
       for (var equipo in registerTorneo.equipos) {
         final equipoDoc = equiposCollection.doc();
+        List<String> jugadorIds = [];
+
+        // Crear documentos para cada jugador
+        for (var jugador in equipo.jugadores) {
+          final jugadorDoc = jugadoresCollection.doc();
+          await jugadorDoc.set({
+            'id': jugadorDoc.id,
+            'nombre': jugador.nombre,
+            'numero': jugador.numero,
+            'equipoId': equipoDoc.id,
+            'torneoId': torneoDoc.id,
+          });
+          jugadorIds.add(jugadorDoc.id);
+        }
+
+        // Guardar el equipo con la referencia a sus jugadores
         await equipoDoc.set({
           'id': equipoDoc.id,
           'nombre': equipo.nombre,
-          'torneoId': torneoDoc.id, // Relacionar equipo con torneo
+          'torneoId': torneoDoc.id,
+          'jugadores': jugadorIds,
         });
         equipoIds.add(equipoDoc.id);
       }
@@ -38,19 +62,16 @@ class TorneoDatasourceImpl implements TorneoDatasource {
       await torneoDoc.set({
         ...registerTorneo.toJson(),
         'id': torneoDoc.id,
-        'equipos': equipoIds, // Solo guardamos los IDs de los equipos
+        'equipos': equipoIds,
       });
 
-      final torneoData = await torneoDoc.get();
-
-      print('Torneo creado: ${torneoData.data()}');
-
-      // Torneo torneo = TorneoMapper.torneoJsonToEntity({
-      //   'id': torneoDoc.id,
-      //   ...torneoData.data() as Map<String, dynamic>,
-      // });
+      print('Torneo creado: ${torneoDoc.id}');
+    } on FirebaseException catch (e) {
+      throw FirebaseErrorHandler.handleFirebaseException(e);
+    } on PlatformException catch (e) {
+      throw FirebaseErrorHandler.handlePlatformException(e);
     } catch (e) {
-      throw Exception('Error al crear el torneo y los equipos: $e');
+      throw FirebaseErrorHandler.handleGenericException(e);
     }
   }
 
@@ -61,9 +82,50 @@ class TorneoDatasourceImpl implements TorneoDatasource {
   }
 
   @override
-  Future<Torneo> getTorneo(String id) {
-    // TODO: implement getTorneo
-    throw UnimplementedError();
+  Future<Torneo> getTorneo(String id) async {
+    try {
+      final torneoDoc = await _firestore.collection('torneos').doc(id).get();
+      if (!torneoDoc.exists) throw Exception('Torneo no encontrado');
+
+      final torneoData = torneoDoc.data()!;
+      final equiposIds = List<String>.from(torneoData['equipos'] ?? []);
+      final equipos = await Future.wait(equiposIds.map((equipoId) async {
+        final equipoDoc =
+            await _firestore.collection('equipos').doc(equipoId).get();
+        if (!equipoDoc.exists) return null;
+
+        final equipoData = equipoDoc.data()!;
+        final jugadoresIds = List<String>.from(equipoData['jugadores'] ?? []);
+
+        // Obtener los jugadores
+        final jugadores = await Future.wait(jugadoresIds.map((jugadorId) async {
+          final jugadorDoc =
+              await _firestore.collection('jugadores').doc(jugadorId).get();
+          if (!jugadorDoc.exists) return null;
+          return JugadorMapper.jugadorJsonToEntity(jugadorDoc.data()!);
+        }));
+
+        // Filtrar jugadores nulos y crear el equipo
+        return EquipoMapper.equipoJsonToEntity({
+          ...equipoData,
+          'jugadores': jugadores.where((j) => j != null).toList(),
+        });
+      }));
+
+      // Filtrar equipos nulos
+      final equiposValidos = equipos.where((e) => e != null).toList();
+
+      return TorneoMapper.torneoJsonToEntity({
+        ...torneoData,
+        'equipos': equiposValidos,
+      });
+    } on FirebaseException catch (e) {
+      throw FirebaseErrorHandler.handleFirebaseException(e);
+    } on PlatformException catch (e) {
+      throw FirebaseErrorHandler.handlePlatformException(e);
+    } catch (e) {
+      throw FirebaseErrorHandler.handleGenericException(e);
+    }
   }
 
   @override
@@ -175,25 +237,36 @@ class TorneoDatasourceImpl implements TorneoDatasource {
         'equipos': tablaPosiciones.map((e) => e.toJson()).toList(),
       });
 
-      // Generar partidos
+      // Generar partidos de ida y vuelta
       List<Partido> partidos = [];
-      for (var i = 0; i < equipoIds.length; i++) {
+      int diasEntreFechas = 7; // Una semana entre cada fecha
+      DateTime fechaBase = DateTime.now();
+
+      // Partidos de ida
+      for (var i = 0; i < equipoIds.length - 1; i++) {
         for (var j = i + 1; j < equipoIds.length; j++) {
           partidos.add(Partido(
             id: _firestore.collection('partidos').doc().id,
             torneoId: torneoId,
             equipo1: equipoIds[i],
             equipo2: equipoIds[j],
-            fecha: DateTime.now().add(Duration(days: i * 3)),
-          ));
-          partidos.add(Partido(
-            id: _firestore.collection('partidos').doc().id,
-            torneoId: torneoId,
-            equipo1: equipoIds[j],
-            equipo2: equipoIds[i],
-            fecha: DateTime.now().add(Duration(days: (i * 3) + 7)),
+            fecha: fechaBase
+                .add(Duration(days: partidos.length * diasEntreFechas)),
           ));
         }
+      }
+
+      // Partidos de vuelta (invirtiendo local y visitante)
+      int partidosIda = partidos.length;
+      for (var i = 0; i < partidosIda; i++) {
+        partidos.add(Partido(
+          id: _firestore.collection('partidos').doc().id,
+          torneoId: torneoId,
+          equipo1: partidos[i].equipo2, // Invertimos local y visitante
+          equipo2: partidos[i].equipo1,
+          fecha: fechaBase
+              .add(Duration(days: (partidosIda + i) * diasEntreFechas)),
+        ));
       }
 
       // Guardar los partidos en Firestore
@@ -204,7 +277,8 @@ class TorneoDatasourceImpl implements TorneoDatasource {
             .set(partido.toJson());
       }
 
-      print("Campeonato iniciado correctamente.");
+      print(
+          "Campeonato iniciado correctamente con ${partidos.length} partidos generados.");
     } catch (e) {
       throw Exception("Error al iniciar el campeonato: $e");
     }
@@ -288,7 +362,7 @@ class TorneoDatasourceImpl implements TorneoDatasource {
           return equipo.copyWith(
             p: equipo.p + 1,
             pj: equipo.pj + 1,
-            dg: equipo.dg + (golesPerdedor - golesGanador),
+            dg: equipo.dg - (golesGanador - golesPerdedor),
           );
         } else {
           return equipo;
@@ -336,6 +410,7 @@ class TorneoDatasourceImpl implements TorneoDatasource {
           equipo2: partido.equipo2,
           fecha: partido.fecha,
           resultado: partido.resultado,
+          estado: partido.estado,
           equipo1Nombre: equiposMap[partido.equipo1] ?? "Desconocido",
           equipo2Nombre: equiposMap[partido.equipo2] ?? "Desconocido",
         );
@@ -344,6 +419,109 @@ class TorneoDatasourceImpl implements TorneoDatasource {
       return partidosDetallados;
     } catch (e) {
       throw Exception("Error al obtener los partidos: $e");
+    }
+  }
+
+  @override
+  Future<Torneo?> getTorneoByCode(String code, String role) async {
+    try {
+      // Normalizar el código eliminando espacios y guiones
+      final normalizedCode = code.replaceAll(RegExp(r'[\s-]'), '');
+      print('Código normalizado para búsqueda: $normalizedCode');
+      print("Role: $role");
+      final querySnapshot = await _firestore
+          .collection('torneos')
+          .where(
+            role == 'Árbitro' ? 'codigoAccesoArbitro' : 'codigoAccesoJugador',
+            isEqualTo: normalizedCode,
+          )
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print('No se encontró torneo con el código: $normalizedCode');
+        throw CustomError(
+            'El código de acceso ingresado no corresponde a ningún torneo activo',
+            code: 'invalid-code');
+      }
+
+      print('Torneo encontrado con el código proporcionado');
+      final torneoDoc = querySnapshot.docs.first;
+      final torneoData = torneoDoc.data();
+      torneoData['id'] = torneoDoc.id;
+
+      // Obtener los equipos del torneo
+      List<Equipo> equipos = [];
+      if (torneoData['equipos'] != null && torneoData['equipos'] is List) {
+        final equipoIds = List<String>.from(torneoData['equipos']);
+        for (String equipoId in equipoIds) {
+          final equipoDoc =
+              await _firestore.collection('equipos').doc(equipoId).get();
+          if (equipoDoc.exists && equipoDoc.data() != null) {
+            final equipoData = equipoDoc.data()!;
+            equipos.add(Equipo(
+              id: equipoDoc.id,
+              nombre: equipoData['nombre'] ?? '',
+              jugadores: [], // Inicialmente vacío, se puede cargar si es necesario
+            ));
+          }
+        }
+      }
+
+      return Torneo(
+        id: torneoData['id'],
+        estado: torneoData['estado'] ?? 'Sin Empezar',
+        nombre: torneoData['nombre'] ?? '',
+        formato: torneoData['formato'] ?? '',
+        fechaInicio: DateTime.parse(torneoData['fechaInicio']),
+        equipos: equipos,
+        organizadorId: torneoData['organizadorId'] ?? '',
+        codigoAccesoJugador: torneoData['codigoAccesoJugador'] ?? '',
+        codigoAccesoArbitro: torneoData['codigoAccesoArbitro'] ?? '',
+      );
+    } on FirebaseException catch (e) {
+      throw FirebaseErrorHandler.handleFirebaseException(e);
+    } on PlatformException catch (e) {
+      throw FirebaseErrorHandler.handlePlatformException(e);
+    } catch (e) {
+      throw FirebaseErrorHandler.handleGenericException(e);
+    }
+  }
+
+  @override
+  Future<void> assignTournamentToUser(String userId, String torneoId) async {
+    try {
+      final userRef = _firestore.collection('users').doc(userId);
+      await userRef.update({
+        'torneos': FieldValue.arrayUnion([torneoId])
+      });
+    } on FirebaseException catch (e) {
+      throw FirebaseErrorHandler.handleFirebaseException(e);
+    } on PlatformException catch (e) {
+      throw FirebaseErrorHandler.handlePlatformException(e);
+    } catch (e) {
+      throw FirebaseErrorHandler.handleGenericException(e);
+    }
+  }
+
+  @override
+  Future<void> registrarResultadoPartido({
+    required String partidoId,
+    required String resultado,
+    required Map<String, dynamic> incidencias,
+  }) async {
+    try {
+      await _firestore.collection('partidos').doc(partidoId).update({
+        'resultado': resultado,
+        'incidencias': incidencias,
+        'estado': 'Finalizado',
+      });
+    } on FirebaseException catch (e) {
+      throw FirebaseErrorHandler.handleFirebaseException(e);
+    } on PlatformException catch (e) {
+      throw FirebaseErrorHandler.handlePlatformException(e);
+    } catch (e) {
+      throw FirebaseErrorHandler.handleGenericException(e);
     }
   }
 }

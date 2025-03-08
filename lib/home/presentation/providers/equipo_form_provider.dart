@@ -7,7 +7,7 @@ import 'package:formz/formz.dart';
 final equipoProvider =
     StateNotifierProvider<EquipoNotifier, EquipoState>((ref) {
   final registrarEquipoCallback =
-      ref.watch(torneoProvider.notifier).agregarEquipo;
+      ref.watch(torneoFormProvider.notifier).agregarEquipo;
   return EquipoNotifier(
     registrarEquipoCallback: registrarEquipoCallback,
   );
@@ -18,8 +18,10 @@ class EquipoState {
   final Name nombreJugador;
   final Number numeroJugador;
   final List<Jugador> jugadores;
-  final bool isSubmitting; // Para manejar el estado del botón
-  final bool isValid; // Para manejar la validación del formulario
+  final bool isSubmitting;
+  final bool isValid;
+  final String successMessage;
+  final String errorMessage;
 
   EquipoState({
     this.nombreEquipo = const Name.pure(),
@@ -28,6 +30,8 @@ class EquipoState {
     this.jugadores = const [],
     this.isValid = false,
     this.isSubmitting = false,
+    this.successMessage = '',
+    this.errorMessage = '',
   });
 
   EquipoState copyWith({
@@ -37,6 +41,8 @@ class EquipoState {
     List<Jugador>? jugadores,
     bool? isSubmitting,
     bool? isValid,
+    String? successMessage,
+    String? errorMessage,
   }) {
     return EquipoState(
       nombreEquipo: nombreEquipo ?? this.nombreEquipo,
@@ -45,6 +51,8 @@ class EquipoState {
       jugadores: jugadores ?? this.jugadores,
       isValid: isValid ?? this.isValid,
       isSubmitting: isSubmitting ?? this.isSubmitting,
+      successMessage: successMessage ?? this.successMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -56,24 +64,22 @@ class Jugador {
   Jugador({required this.nombre, required this.numero});
 }
 
+typedef RegistrarEquipoCallback = void Function(
+    String nombre, List<Jugador> jugadores);
+
 class EquipoNotifier extends StateNotifier<EquipoState> {
-  final Function(String, List<Jugador>) registrarEquipoCallback;
+  final RegistrarEquipoCallback registrarEquipoCallback;
+
   EquipoNotifier({
     required this.registrarEquipoCallback,
   }) : super(EquipoState());
 
-  onNombreJugadorChange(String value) {
-    final newNombre = Name.dirty(value);
-    state = state.copyWith(
-      nombreJugador: newNombre,
-    );
+  void clearErrorMessage() {
+    state = state.copyWith(errorMessage: '');
   }
 
-  onNumeroJugadorChange(String value) {
-    final newNumero = Number.dirty(value);
-    state = state.copyWith(
-      numeroJugador: newNumero,
-    );
+  void clearSuccessMessage() {
+    state = state.copyWith(successMessage: '');
   }
 
   onNombreEquipoChange(String value) {
@@ -81,41 +87,86 @@ class EquipoNotifier extends StateNotifier<EquipoState> {
     state = state.copyWith(
       nombreEquipo: newNombre,
       isValid: Formz.validate([newNombre]),
+      errorMessage: '',
     );
   }
 
-  agregarJugador() {
-    if (!state.nombreJugador.isValid || !state.numeroJugador.isValid) return;
+  onNombreJugadorChange(String value) {
+    final newNombre = Name.dirty(value);
+    state = state.copyWith(
+      nombreJugador: newNombre,
+      isValid: Formz.validate([
+        newNombre,
+        state.numeroJugador,
+      ]),
+      errorMessage: '',
+    );
+  }
 
-    final nuevoJugador = Jugador(
+  onNumeroJugadorChange(String value) {
+    final newNumero = Number.dirty(value);
+    state = state.copyWith(
+      numeroJugador: newNumero,
+      isValid: Formz.validate([
+        state.nombreJugador,
+        newNumero,
+      ]),
+      errorMessage: '',
+    );
+  }
+
+  void agregarJugador() {
+    if (!state.isValid) return;
+
+    final jugador = Jugador(
       nombre: state.nombreJugador.value,
       numero: int.parse(state.numeroJugador.value),
     );
 
     state = state.copyWith(
-      jugadores: List<Jugador>.from(state.jugadores)..add(nuevoJugador),
+      jugadores: [...state.jugadores, jugador],
       nombreJugador: const Name.pure(),
       numeroJugador: const Number.pure(),
       isValid: false,
     );
   }
 
-  eliminarJugador(Jugador jugador) {
-    state = state.copyWith(
-      jugadores: List<Jugador>.from(state.jugadores)..remove(jugador),
-    );
-  }
+  void registrarEquipo() {
+    if (state.nombreEquipo.value.isEmpty) {
+      state = state.copyWith(
+        errorMessage: 'El nombre del equipo es requerido',
+      );
+      return;
+    }
 
-  Future<void> registrarEquipo() async {
-    state = state.copyWith(isSubmitting: true);
+    if (state.jugadores.isEmpty) {
+      state = state.copyWith(
+        errorMessage: 'Debe agregar al menos un jugador',
+      );
+      return;
+    }
 
     try {
+      state = state.copyWith(
+        isSubmitting: true,
+        errorMessage: '',
+        successMessage: '',
+      );
+
       registrarEquipoCallback(state.nombreEquipo.value, state.jugadores);
+
+      state = state.copyWith(
+        isSubmitting: false,
+        successMessage: 'Equipo registrado exitosamente',
+      );
+
+      // Reiniciar el estado
       state = EquipoState();
     } catch (e) {
-      throw Exception("Error al registrar el equipo: $e");
-    } finally {
-      state = state.copyWith(isSubmitting: false);
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: 'Error al registrar el equipo: ${e.toString()}',
+      );
     }
   }
 }

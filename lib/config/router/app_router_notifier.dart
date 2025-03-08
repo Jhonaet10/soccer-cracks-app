@@ -1,3 +1,4 @@
+import 'package:app_project/auth/domain/entities/user.dart';
 import 'package:app_project/auth/presentation/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +20,7 @@ class GoRouterNotifier extends ChangeNotifier {
   }
 
   AuthStatus get authStatus => _authStatus;
+  User? get currentUser => _authNotifier.state.user;
 
   set authStatus(AuthStatus value) {
     _authStatus = value;

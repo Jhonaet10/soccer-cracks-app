@@ -9,20 +9,25 @@ final loginFormProvider =
   final loginUserCallback = ref.watch(authProvider.notifier).loginUser;
   final loginWithGoogleCallback =
       ref.watch(authProvider.notifier).loginWithGoogle;
+  final loginWithFacebookCallback =
+      ref.watch(authProvider.notifier).loginWithFacebook;
 
   return LoginFormNotifier(
       loginUserCallback: loginUserCallback,
-      loginWithGoogleCallback: loginWithGoogleCallback);
+      loginWithGoogleCallback: loginWithGoogleCallback,
+      loginWithFacebookCallback: loginWithFacebookCallback);
 });
 
 //! 2 - Como implementamos un notifier
 class LoginFormNotifier extends StateNotifier<LoginFormState> {
   final Function(String, String) loginUserCallback;
   final Function() loginWithGoogleCallback;
+  final Function() loginWithFacebookCallback;
 
   LoginFormNotifier({
     required this.loginUserCallback,
     required this.loginWithGoogleCallback,
+    required this.loginWithFacebookCallback,
   }) : super(LoginFormState());
 
   onEmailChange(String value) {
@@ -47,12 +52,33 @@ class LoginFormNotifier extends StateNotifier<LoginFormState> {
 
     if (!state.isValid) return;
 
-    await loginUserCallback(state.email.value, state.password.value);
+    state = state.copyWith(isPosting: true);
+
+    try {
+      await loginUserCallback(state.email.value, state.password.value);
+    } finally {
+      state = state.copyWith(isPosting: false);
+    }
   }
 
   onSignInWithGoogle() async {
     state = state.copyWith(isPosting: true);
-    await loginWithGoogleCallback();
+
+    try {
+      await loginWithGoogleCallback();
+    } finally {
+      state = state.copyWith(isPosting: false);
+    }
+  }
+
+  onSignInWithFacebook() async {
+    state = state.copyWith(isPosting: true);
+
+    try {
+      await loginWithFacebookCallback();
+    } finally {
+      state = state.copyWith(isPosting: false);
+    }
   }
 
   _touchEveryField() {
