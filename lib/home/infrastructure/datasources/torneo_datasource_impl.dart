@@ -349,20 +349,29 @@ class TorneoDatasourceImpl implements TorneoDatasource {
           .map((e) => TablaPosicion.fromJson(e))
           .toList();
 
+      // Validación de que el equipo ganador realmente tiene más goles
+      if (golesGanador < golesPerdedor) {
+        throw Exception(
+            "Error en la lógica: El equipo ganador tiene menos goles que el perdedor.");
+      }
+
       // Crear nueva lista con los valores actualizados
       List<TablaPosicion> nuevaTabla = equipos.map((equipo) {
         if (equipo.equipoId == equipoGanador) {
           return equipo.copyWith(
-            g: equipo.g + 1,
-            pj: equipo.pj + 1,
-            pts: equipo.pts + 3,
-            dg: equipo.dg + (golesGanador - golesPerdedor),
+            g: equipo.g + 1, // Suma 1 victoria
+            pj: equipo.pj + 1, // Suma 1 partido jugado
+            pts: equipo.pts + 3, // Suma 3 puntos por la victoria
+            dg: equipo.dg +
+                (golesGanador - golesPerdedor), // Diferencia de goles sumada
           );
         } else if (equipo.equipoId == equipoPerdedor) {
           return equipo.copyWith(
-            p: equipo.p + 1,
-            pj: equipo.pj + 1,
-            dg: equipo.dg - (golesGanador - golesPerdedor),
+            p: equipo.p + 1, // Suma 1 derrota
+            pj: equipo.pj + 1, // Suma 1 partido jugado
+            dg: equipo.dg -
+                (golesGanador -
+                    golesPerdedor), // Restamos correctamente la diferencia
           );
         } else {
           return equipo;
@@ -374,7 +383,7 @@ class TorneoDatasourceImpl implements TorneoDatasource {
         'equipos': nuevaTabla.map((e) => e.toJson()).toList(),
       });
 
-      print("Tabla de posiciones actualizada.");
+      print("Tabla de posiciones actualizada correctamente.");
     } catch (e) {
       throw Exception("Error al actualizar la tabla de posiciones: $e");
     }

@@ -333,6 +333,29 @@ class RegisterResultModal extends ConsumerWidget {
                     onPressed: formState.isLoading
                         ? null
                         : () async {
+                            // Determinar quién ganó correctamente
+                            String equipoGanador, equipoPerdedor;
+                            int golesGanador, golesPerdedor;
+
+                            if (formState.golesEquipo1 >
+                                formState.golesEquipo2) {
+                              equipoGanador = partido.equipo1;
+                              equipoPerdedor = partido.equipo2;
+                              golesGanador = formState.golesEquipo1;
+                              golesPerdedor = formState.golesEquipo2;
+                            } else if (formState.golesEquipo1 <
+                                formState.golesEquipo2) {
+                              equipoGanador = partido.equipo2;
+                              equipoPerdedor = partido.equipo1;
+                              golesGanador = formState.golesEquipo2;
+                              golesPerdedor = formState.golesEquipo1;
+                            } else {
+                              // Si hay empate, evitamos la actualización incorrecta
+                              print(
+                                  "Empate detectado, no se actualiza la tabla de posiciones.");
+                              return;
+                            }
+
                             final success =
                                 await formNotifier.submitResultado(partido);
                             if (success) {
@@ -342,16 +365,10 @@ class RegisterResultModal extends ConsumerWidget {
                                     .read(tablaPosicionesProvider.notifier)
                                     .actualizarPosiciones(
                                       partido.torneoId,
-                                      formState.golesEquipo1 >
-                                              formState.golesEquipo2
-                                          ? partido.equipo1
-                                          : partido.equipo2,
-                                      formState.golesEquipo1 <
-                                              formState.golesEquipo2
-                                          ? partido.equipo1
-                                          : partido.equipo2,
-                                      formState.golesEquipo1,
-                                      formState.golesEquipo2,
+                                      equipoGanador,
+                                      equipoPerdedor,
+                                      golesGanador,
+                                      golesPerdedor,
                                     );
                               }
                             }
