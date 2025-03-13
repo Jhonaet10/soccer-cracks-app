@@ -7,6 +7,10 @@ pipeline {
         PATH = "$FLUTTER_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
     }
 
+    tools {
+        git 'Default' // O el nombre de la instalación configurada en Jenkins
+    }
+
     stages {
         stage('Checkout') {
             steps {
